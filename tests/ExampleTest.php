@@ -103,7 +103,7 @@ class ExampleTest extends \PHPUnit_Framework_TestCase
 
         $original = $this->getResponseMock();
         $modified = $this->getResponseMock();
-        $original->shouldReceive('getHeader')->andReturn($existingPolicy);
+        $original->shouldReceive('getHeader')->andReturn([$existingPolicy]);
         $original->shouldReceive('withHeader')
             ->with($this->middleware->getHeader(), m::on(function ($policy) use ($newPolicy) {
                 return $policy == $newPolicy;
@@ -129,7 +129,7 @@ class ExampleTest extends \PHPUnit_Framework_TestCase
         $newPolicy = $this->middleware->getEncodedConfiguration($profileConfig['profiles']['default']);
         $original = $this->getResponseMock();
         $modified = $this->getResponseMock();
-        $original->shouldReceive('getHeader')->andReturn($existingPolicy);
+        $original->shouldReceive('getHeader')->andReturn([$existingPolicy]);
         $original->shouldReceive('withHeader')
             ->with($this->middleware->getHeader(), m::on(function ($policy) use ($newPolicy) {
                 return $policy == $newPolicy;
@@ -154,7 +154,7 @@ class ExampleTest extends \PHPUnit_Framework_TestCase
         $newPolicy = "default-src 'self' blob:; img-src 'self' blob: data: filesystem:; media-src mediastream:";
         $original = $this->getResponseMock();
         $modified = $this->getResponseMock();
-        $original->shouldReceive('getHeader')->with($this->middleware->getHeader())->andReturn($existingPolicy);
+        $original->shouldReceive('getHeader')->with($this->middleware->getHeader())->andReturn([$existingPolicy]);
         $original->shouldReceive('withHeader')
             ->with($this->middleware->getHeader(), m::on(function ($policy) use ($newPolicy) {
                 return $policy == $newPolicy;
@@ -177,7 +177,7 @@ class ExampleTest extends \PHPUnit_Framework_TestCase
     {
         $existingPolicy = null;
         $original = $this->getResponseMock();
-        $original->shouldReceive('getHeader')->andReturn($existingPolicy);
+        $original->shouldReceive('getHeader')->andReturn([$existingPolicy]);
 
         $response = $this->middleware
             ->handle($original);
@@ -194,7 +194,7 @@ class ExampleTest extends \PHPUnit_Framework_TestCase
     {
         $existingPolicy = "default-src 'self'; img-src 'self' data: blob: filesystem:; media-src mediastream:";
         $original = $this->getResponseMock();
-        $original->shouldReceive('getHeader')->andReturn($existingPolicy);
+        $original->shouldReceive('getHeader')->andReturn([$existingPolicy]);
 
         $response = $this->middleware
             ->handle($original);
@@ -211,7 +211,7 @@ class ExampleTest extends \PHPUnit_Framework_TestCase
     {
         $existingPolicy = "default-src 'self'; img-src 'self' data: blob: filesystem:; media-src mediastream:";
         $original = $this->getResponseMock();
-        $original->shouldReceive('getHeader')->with($this->middleware->getHeader())->andReturn($existingPolicy);
+        $original->shouldReceive('getHeader')->with($this->middleware->getHeader())->andReturn([$existingPolicy]);
 
         $response = $this->middleware
             ->addProfileConfiguration(['profiles' => ['test' => ['default-src' => ["blob:"]]]])

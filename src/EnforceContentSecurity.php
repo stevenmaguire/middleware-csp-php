@@ -51,9 +51,12 @@ class EnforceContentSecurity
     {
         $this->loadDefaultProfiles();
 
-        $initialConfig = $this->decodeConfiguration(
-            (string) $response->getHeader($this->header)
-        );
+        $currentHeader = $response->getHeader($this->header);
+
+        $initialConfig = [];
+        if (count($currentHeader)) {
+            $initialConfig = $this->decodeConfiguration($currentHeader[0]);
+        }
 
         $initialDirectives = $this->encodeConfiguration($initialConfig);
 
