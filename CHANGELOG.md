@@ -2,10 +2,10 @@
 
 All Notable changes to `middleware-csp-php` will be documented in this file
 
-## NEXT - YYYY-MM-DD
+## 0.1.0 - 2015-08-05
 
 ### Added
-- Nothing
+- Middleware class capable of adding content security policy directives to a PSR 7 response via headers
 
 ### Deprecated
 - Nothing
