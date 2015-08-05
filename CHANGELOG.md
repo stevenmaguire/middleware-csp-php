@@ -2,6 +2,23 @@
 
 All Notable changes to `middleware-csp-php` will be documented in this file
 
+## 0.1.1 - 2015-08-05
+
+### Added
+- Nothing
+
+### Deprecated
+- Nothing
+
+### Fixed
+- update initial header config to expect an array from getHeader method
+
+### Removed
+- Nothing
+
+### Security
+- Nothing
+
 ## 0.1.0 - 2015-08-05
 
 ### Added
