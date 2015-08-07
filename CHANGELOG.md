@@ -2,6 +2,23 @@
 
 All Notable changes to `middleware-csp-php` will be documented in this file
 
+## 0.1.2 - 2015-08-06
+
+### Added
+- Profile configuration validation method
+
+### Deprecated
+- Nothing
+
+### Fixed
+- Nothing
+
+### Removed
+- Nothing
+
+### Security
+- Nothing
+
 ## 0.1.1 - 2015-08-05
 
 ### Added
