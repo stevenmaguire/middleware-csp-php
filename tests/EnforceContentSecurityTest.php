@@ -1,8 +1,9 @@
 <?php namespace Stevenmaguire\Http\Middleware\Test;
 
 use Mockery as m;
+use Stevenmaguire\Http\Middleware\Exceptions\CspValidationException;
 
-class ExampleTest extends \PHPUnit_Framework_TestCase
+class EnforceContentSecurityTest extends \PHPUnit_Framework_TestCase
 {
     protected $header = 'Content-Security-Policy';
 
@@ -19,12 +20,7 @@ class ExampleTest extends \PHPUnit_Framework_TestCase
 
     protected function getAvailableDirectives()
     {
-        return [
-            'base-uri','child-src','connect-src','default-src','font-src',
-            'form-action','frame-ancestors','frame-src','img-src','manifest-src',
-            'media-src','object-src','plugin-types','referrer','reflected-xss',
-            'report-uri','sandbox','script-src','style-src','upgrade-insecure-requests',
-        ];
+        return GenericMiddleware::getAvailableDirectives();
     }
 
     protected function getAvailableDomains()
@@ -218,5 +214,203 @@ class ExampleTest extends \PHPUnit_Framework_TestCase
             ->handle($original);
 
         $this->assertEquals($original, $response);
+    }
+
+    /**
+     * Validation exceptions contain list of messages.
+     */
+    public function testValidationExceptionContainsMessages()
+    {
+        $profiles = ['default' => rand(0,10)];
+
+        try {
+            $v = GenericMiddleware::validateProfiles($profiles);
+        } catch (CspValidationException $e) {
+            $this->assertTrue(is_array($e->getMessages()));
+        }
+    }
+
+    /**
+     * Validation fails when default key defined and value is not string or array.
+     * @expectedException Stevenmaguire\Http\Middleware\Exceptions\CspValidationException
+     */
+    public function testValidationFailsCondition1()
+    {
+        $profiles = ['default' => rand(0,10)];
+
+        try {
+            $v = GenericMiddleware::validateProfiles($profiles);
+        } catch (CspValidationException $e) {
+            $this->assertContains('Default profile configuration must be a string or array.', $e->getMessages());
+            throw $e;
+        }
+    }
+
+    /**
+     * Validation fails when default key defined and value is array that contains any non-strings.
+     * @expectedException Stevenmaguire\Http\Middleware\Exceptions\CspValidationException
+     */
+    public function testValidationFailsCondition2()
+    {
+        $profiles = ['default' => [uniqid(), uniqid(), rand(0,10)]];
+
+        try {
+            $v = GenericMiddleware::validateProfiles($profiles);
+        } catch (CspValidationException $e) {
+            $this->assertContains('Default profile configuration must contain only strings when defined as array.', $e->getMessages());
+            throw $e;
+        }
+    }
+
+    /**
+     * Validation fails when profiles key defined and value is not array.
+     * @expectedException Stevenmaguire\Http\Middleware\Exceptions\CspValidationException
+     */
+    public function testValidationFailsCondition3()
+    {
+        $profiles = ['profiles' => uniqid()];
+
+        try {
+            $v = GenericMiddleware::validateProfiles($profiles);
+        } catch (CspValidationException $e) {
+            $this->assertContains('Profile configuration must be an array.', $e->getMessages());
+            throw $e;
+        }
+    }
+
+    /**
+     * Validation fails when profiles contain directives whose value is not array.
+     * @expectedException Stevenmaguire\Http\Middleware\Exceptions\CspValidationException
+     */
+    public function testValidationFailsCondition4()
+    {
+        $profiles = ['profiles' => [
+            'profile_one' => rand(0,10),
+            'profile_two' => uniqid(),
+            'profile_three' => rand(0,10),
+            ]
+        ];
+
+        try {
+            $v = GenericMiddleware::validateProfiles($profiles);
+        } catch (CspValidationException $e) {
+            array_walk($profiles['profiles'], function ($v, $k) use ($e) {
+                $this->assertContains('Profile configuration for "'.$k.'" must be an array.', $e->getMessages());
+            });
+            throw $e;
+        }
+    }
+
+    /**
+     * Validation fails when profiles contain directives whose value is array and directives
+     * not string or array.
+     * @expectedException Stevenmaguire\Http\Middleware\Exceptions\CspValidationException
+     */
+    public function testValidationFailsCondition5()
+    {
+        $profiles = ['profiles' => [
+            'profile_one' => [
+                    'directive_one' => rand(0,10),
+                    'directive_two' => new \stdClass,
+                ],
+            ]
+        ];
+
+        try {
+            $v = GenericMiddleware::validateProfiles($profiles);
+        } catch (CspValidationException $e) {
+            array_walk($profiles['profiles'], function ($config, $profile) use ($e) {
+                array_walk($config, function ($domains, $directive) use ($profile, $e) {
+                    $this->assertContains('Directive configuration for "'.$profile.':'.$directive.'" must be a string or an array.', $e->getMessages());
+                });
+            });
+            throw $e;
+        }
+    }
+
+    /**
+     * Validation succeds when configuration is empty array.
+     */
+    public function testValidationSucceedsCondition1()
+    {
+        $profiles = [];
+
+        $this->assertTrue(
+            GenericMiddleware::validateProfiles($profiles)
+        );
+    }
+
+
+    /**
+     * Validation succeds when default key is defined with string value.
+     */
+    public function testValidationSucceedsCondition2()
+    {
+        $profiles = ['default' => uniqid()];
+
+        $this->assertTrue(
+            GenericMiddleware::validateProfiles($profiles)
+        );
+    }
+
+    /**
+     * Validation succeds when default key is defined with array value.
+     */
+    public function testValidationSucceedsCondition3()
+    {
+        $profiles = ['default' => []];
+
+        $this->assertTrue(
+            GenericMiddleware::validateProfiles($profiles)
+        );
+    }
+
+    /**
+     * Validation succeds when profiles key is defined with array value.
+     */
+    public function testValidationSucceedsCondition4()
+    {
+        $profiles = ['profiles' => []];
+
+        $this->assertTrue(
+            GenericMiddleware::validateProfiles($profiles)
+        );
+    }
+
+    /**
+     * Validation succeds when profiles key is defined with array of profile arrays.
+     */
+    public function testValidationSucceedsCondition5()
+    {
+        $profiles = ['profiles' => [
+            'profile_one' => [],
+            'profile_two' => [],
+        ]];
+
+        $this->assertTrue(
+            GenericMiddleware::validateProfiles($profiles)
+        );
+    }
+
+    /**
+     * Validation succeds when profiles key is defined with array of profile arrays
+     * that contain directive strings or arrays.
+     */
+    public function testValidationSucceedsCondition6()
+    {
+        $profiles = ['profiles' => [
+            'profile_one' => [
+                'directive_one' => [],
+                'directive_two' => uniqid(),
+            ],
+            'profile_two' => [
+                'directive_one' => [],
+                'directive_two' => uniqid(),
+            ],
+        ]];
+
+        $this->assertTrue(
+            GenericMiddleware::validateProfiles($profiles)
+        );
     }
 }
